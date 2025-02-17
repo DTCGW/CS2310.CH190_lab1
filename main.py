@@ -4,7 +4,9 @@ from pathlib import Path
 from tabmini.estimators import XGBoost
 from tabmini.estimators.RF import RandomForest
 from tabmini.estimators import LightGBM
+from tabmini.estimators.TabNet import TabNet
 from tabmini.types import TabminiDataset
+from tabmini.utils import find_almost_constant_columns
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="TabMini-Classification Options.")
@@ -33,6 +35,7 @@ def main(args):
     # process
     for dt_name in dataset_name_lst:
         X, y = dataset[dt_name]
+        
         if 2 in y.values: 
             y = (y == 2).astype(int)
         num_records = len(X)
@@ -42,7 +45,12 @@ def main(args):
             model = RandomForest(small_dataset= True)
         elif args.model == 2: 
             model = LightGBM(small_dataset= True)
-            
+        elif args.model == 10:
+
+            model = TabNet(small_dataset = True)
+            # remove_threshold = 0.95 if len(X.columns) < 80 else 0.9
+            # X = find_almost_constant_columns(X, remove_threshold, working_directory, dt_name, num_records)
+        
         model.fit(X, y)
 
         model.save_results(filename= working_directory / f"{dt_name}_{num_records}.csv")
