@@ -48,6 +48,7 @@ def main(args):
         elif args.model == 10:
 
             model = TabNet(small_dataset = True)
+            # Delete columns with data values that are almost identical in every row 
             # remove_threshold = 0.95 if len(X.columns) < 80 else 0.9
             # X = find_almost_constant_columns(X, remove_threshold, working_directory, dt_name, num_records)
         
