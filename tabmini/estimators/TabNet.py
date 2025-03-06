@@ -3,7 +3,7 @@ from pathlib import Path
 from pytorch_tabnet.tab_model import TabNetClassifier
 import numpy as np
 import pandas as pd
-
+import torch
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils import check_X_y
 from sklearn.model_selection import train_test_split
@@ -64,19 +64,40 @@ class TabNet(BaseEstimator, ClassifierMixin):
         for param in param_combinations:
             custom_lr = param["lr"]
             custom_epochs = param["epochs"]
+            # good results
+            # current_model = TabNetClassifier(
+            #     optimizer_fn=torch.optim.Adam,
+            #            scheduler_params={"step_size":10, 
+            #                              "gamma":0.9},
+            #            scheduler_fn=torch.optim.lr_scheduler.StepLR,
+            # )
+            
+            # current_model.fit(X_train = X_train, y_train= y_train, patience= 60, max_epochs=200,
+            #                   eval_set=[(X_train, y_train), (X_test, y_test)],
+            #                   eval_name=['train', 'valid'],
+            #                   eval_metric=['accuracy'],
+            #                   drop_last=False,
+            #                   )
+            # try
             current_model = TabNetClassifier(
-                n_d=8, n_a=8,
-                scheduler_params={"is_batch_level":True,
-                                  "epochs":custom_epochs
-                                  },
-                optimizer_params=dict(lr=custom_lr),
+                n_d=16,
+                n_a=16,
+                n_steps=5,
                 gamma=1.3,
+                lambda_sparse=1e-4,
+                optimizer_fn=torch.optim.Adam,
+                optimizer_params=dict(lr=custom_lr, weight_decay=1e-5),
+                scheduler_params={"step_size":10, 
+                                  "gamma":0.9},
+                scheduler_fn=torch.optim.lr_scheduler.StepLR,
             )
-            current_model.fit(X_train = X_train, y_train= y_train,
-                              eval_set=[(X_train, y_train)],
-                              eval_name=['train'],
+            
+            current_model.fit(X_train = X_train, y_train= y_train, patience= 999, max_epochs=300,
+                              eval_set=[(X_train, y_train), (X_test, y_test)],
+                              eval_name=['train', 'valid'],
+                              eval_metric=['accuracy'],
+                              drop_last=False,
                               )
-
             y_pred = current_model.predict(X_test)
             f1 = f1_score(y_test, y_pred, average="binary")
             acc = accuracy_score(y_test, y_pred)
